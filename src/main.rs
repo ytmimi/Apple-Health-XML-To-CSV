@@ -1,3 +1,4 @@
+use csv::Writer;
 use roxmltree;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -55,11 +56,13 @@ fn main() -> std::io::Result<()> {
         Err(_) => panic!("Couldn't parse XML"),
     };
 
-    for node in doc.descendants().filter(|node| node.has_tag_name("Record")) {
-        let record = Record::from_xml_node(&node);
+    let mut wtr = Writer::from_path("health_data.csv")?;
 
-        println!("{:?}", record.value);
+    for node in doc.descendants().filter(|node| node.has_tag_name("Record")) {
+        wtr.serialize(Record::from_xml_node(&node))?;
     }
 
+    // CSV writers use an internal buffer, so we should always flush when done.
+    wtr.flush()?;
     Ok(())
 }
